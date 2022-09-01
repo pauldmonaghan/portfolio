@@ -1,0 +1,32 @@
+import numpy as np
+import pandas as pd
+vib = pd.read_csv("vibration_measurements.csv", header = 4)
+vib_MAX = vib[vib["VM-Date"] == "MAX"][vib["X_PPV"] != "-.-"]
+vib_MAX_X = vib_MAX.iloc[:,3:29]
+vib_MAX_Y = vib_MAX.iloc[:,31:57]
+vib_MAX_Z = vib_MAX.iloc[:,59:85]
+a_ref = 1e-6
+trans_func = np.array([-68.4, -69.3, -70.4, -71.4, -73.3, -74.3, -75.4, -76.3, -77.7, -71.5, -65.7, -61.3, -58.4, -54.8, -53.3, -51.3, -50.9, -52.4, -53.5, -54.2, -54.1, -54.3, -54.8, -55.5, -53.5, -54.2]) #Transfer function (change if necessary)
+
+def a_to_La(vib):
+    vib.columns = ["1", "1.25", "1.60", "2", "2.5", "3.15", "4", "5", "6.3", "8", "10", "12.5", "16", "20", "25", "31.5", "40", "50", "63", "80", "100", "125", "160", "200", "250", "315"]
+    for i in vib.columns:
+        vib[i] = vib[i].apply(lambda a: 20*np.log10(float(a)/a_ref))  #dB conversion
+    return vib
+
+(La_X_cor, La_Y_cor, La_Z_cor) = ((a_to_La(vib_MAX_X) + trans_func).transpose(), (a_to_La(vib_MAX_Y) + trans_func).transpose(), (a_to_La(vib_MAX_Z) + trans_func).transpose()) # + Transfer Function
+
+def deci_add(L):
+    L.columns = range(0,len(L.columns))
+    logsum = np.zeros(len(L.columns), dtype = float)
+    for i in L.columns:
+        logsum[i] = round(10*np.log10(sum(10**(L[i]/10)))) #Logsum
+    logsum_MAX = logsum.max() #Max logsum in each direction
+    return logsum, logsum_MAX
+
+
+logsum_X, logsum_X_MAX = deci_add(La_X_cor)
+logsum_Y, logsum_Y_MAX = deci_add(La_Y_cor)
+logsum_Z, logsum_Z_MAX = deci_add(La_Z_cor)
+
+logsums = pd.DataFrame({"X": logsum_X, "Y": logsum_Y, "Z": logsum_Z}) #Re-radiated noise table
