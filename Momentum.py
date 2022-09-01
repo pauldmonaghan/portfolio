@@ -1,7 +1,7 @@
 import scipy as sp
 import matplotlib.pyplot as plt
 def electron_motion (px, py, pz, x, y, z, t, dt):
-    gamma=1
+    gamma=1.0
     q=-1.60e-19
     E=2.74e12
     c=3.0e8
